@@ -52,34 +52,62 @@ class OrderNode:
 class OrderList:
     def __init__(self):
         self.head = None
+        self.tail = None  # Nuevo puntero al último nodo
+        self.length = 0   # Contador de nodos
     
     def add_order(self, id: int, products: List[int]):
         new_order = OrderNode(id, products)
-        new_order.next = self.head
-        self.head = new_order
+        if not self.head:
+            self.head = new_order
+            self.tail = new_order  # Si es el primer nodo, tail también apunta a él
+        else:
+            self.tail.next = new_order  # Conectamos el último nodo con el nuevo
+            self.tail = new_order  # Actualizamos tail
+        self.length += 1
     
     def get_order(self, id: int):
         current = self.head
         while current:
             if current.id == id:
-                return json.loads(json.dumps({"id": current.id, "products": current.products}))
+                return current.products  # Devuelve solo la lista de productos
             current = current.next
         return None
     
     def delete_order(self, id: int):
-        current = self.head
-        prev = None
-        while current and current.id != id:
-            prev = current
-            current = current.next
-        if current is None:
+        if not self.head:
             return False
-        if prev is None:
-            self.head = current.next
-        else:
-            prev.next = current.next
-        return True
+        
+        # Si eliminamos el primer nodo
+        if self.head.id == id:
+            self.head = self.head.next
+            if not self.head:
+                self.tail = None
+            self.length -= 1
+            self._update_ids()
+            return True
+
+        current = self.head
+        while current.next:
+            if current.next.id == id:
+                if current.next == self.tail:
+                    self.tail = current
+                current.next = current.next.next
+                self.length -= 1
+                self._update_ids()
+                return True
+            current = current.next
+
+        return False
     
+    def _update_ids(self):
+        """ Método para actualizar los IDs después de eliminar un nodo """
+        current = self.head
+        new_id = 1  # Reinicia los IDs desde 1
+        while current:
+            current.id = new_id
+            new_id += 1
+            current = current.next
+
     def update_order(self, id: int, products: List[int]):
         current = self.head
         while current:
@@ -93,7 +121,7 @@ class OrderList:
         orders = []
         current = self.head
         while current:
-            orders.append(json.loads(json.dumps({"id": current.id, "products": current.products})))
+            orders.append({"id": current.id, "products": current.products})
             current = current.next
         return orders
 
